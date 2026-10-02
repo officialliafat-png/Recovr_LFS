@@ -1,0 +1,5 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Recovr — {{ code }}</title><link rel="stylesheet" href="/static/recovr.css"></head><body>
+<nav><div class="wrap"><a class="logo" href="/">RECOVR</a></div></nav><main style="text-align:center;padding-top:80px"><p class="tag">Error {{ code }}</p>
+<h1>{% if code == 404 %}We couldn't find that page{% elif code == 403 %}You don't have access{% else %}Something went wrong{% endif %}</h1>
+<p class="lead" style="margin:auto">{% if code == 404 %}The link may be old or mistyped.{% elif code == 403 %}Try logging in with an account that has access.{% else %}It is on our side, not yours. Please try again.{% endif %}</p>
+<p><a class="btn" href="/">Go to home</a> <a class="btn o" href="/portal">Open portal</a></p></main></body></html>

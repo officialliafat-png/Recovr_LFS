@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: recovr
+    runtime: docker
+    healthCheckPath: /api/health
+    envVars:
+      - key: LOSTFOUND_COOKIE_SECURE
+        value: true
+      - key: LOSTFOUND_STORAGE_BACKEND
+        value: supabase
+      - key: LOSTFOUND_SESSION_DAYS
+        value: 7
+      - key: LOSTFOUND_MATCH_THRESHOLD
+        value: 0.42
+      - key: LOSTFOUND_SUPABASE_STORAGE_BUCKET
+        value: recovr-items
+      - key: DATABASE_URL
+        sync: false
+      - key: LOSTFOUND_SUPABASE_URL
+        sync: false
+      - key: LOSTFOUND_SUPABASE_SERVICE_ROLE_KEY
+        sync: false

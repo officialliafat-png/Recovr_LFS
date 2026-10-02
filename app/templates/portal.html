@@ -1,0 +1,34 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Recovr — Student portal</title><link rel="stylesheet" href="/static/recovr.css"></head><body><nav><div class="wrap"><a class="logo" href="/">RECOVR</a><div><a href="/">Home</a><a href="/staff">Staff</a><a href="/admin">Admin</a><a href="/guide">Guide</a></div></div></nav><main>
+<div id="auth" class="card" style="max-width:420px;margin:32px auto" hidden><h2 id="atitle">Log in</h2><label>Name</label><input id="nm" placeholder="Your name" hidden>
+<label>Email</label><input id="em"><label>Password</label><input id="pw" type="password"><button onclick="go()">Continue</button> <button class="o" onclick="flip()">Switch log in / sign up</button><p id="err" class="mute"></p></div>
+<div id="app" hidden><p class="tag" id="who"></p><div id="noorg" class="grid" hidden><div class="card"><h3>Join your institution</h3><p class="mute">Ask your institution admin for the join code.</p><label>Join code</label><input id="jc" placeholder="e.g. A1B2C3"><button onclick="join()">Join</button></div><div class="card"><h3>Create an institution</h3><p class="mute">You become its admin and get a join code to share.</p><label>Name</label><input id="on"><label>Campus zones (comma separated)</label><input id="oz" placeholder="library,cafeteria"><button onclick="mkorg()">Create</button></div></div>
+<div id="main"><h2>Report an item</h2><div class="card"><div class="grid"><div><label>Item name</label><input id="ti"><label>Category</label><select id="ca"><option>bags</option><option>electronics</option><option>id_cards</option><option>keys</option><option>clothing</option><option>jewelry</option><option>other</option></select><label>Colour</label><input id="co"></div>
+<div><label>Report type</label><select id="kd" onchange="$('fx').hidden=this.value!=='found'"><option value="lost">Lost item</option><option value="found">Found item (staff)</option></select><div id="fx" hidden><label>Private detail (never public)</label><input id="pd"><label>Storage location</label><input id="sl"></div><label>Campus zone</label><select id="zo"></select><label>Where exactly?</label><input id="lo"><label>Date lost</label><input id="dt" type="date"></div>
+<div><label>Description</label><textarea id="de" rows="3"></textarea><label>Photo</label><input id="im" type="file" accept="image/*"></div></div><button onclick="report()">Submit report</button> <span id="rmsg" class="mute"></span></div>
+<div id="matches"></div>
+<h2 class="s">Found items at your institution</h2><input id="fs" placeholder="Search found items…" oninput="filt()"><div class="grid" id="found"></div>
+<h2 class="s">My claims</h2><div id="claims"></div><h2 class="s">Notifications</h2><div id="notes"></div></div></div></main>
+<script src="/static/recovr.js"></script>
+<script>
+const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const api=(p,o)=>R.api(p,o,true);
+const form=R.form;
+let org,signup=false;function flip(){signup=!signup;$('nm').hidden=!signup;$('atitle').textContent=signup?'Create account':'Log in'}
+async function go(){try{await api(signup?'/auth/signup':'/auth/login',form({display_name:$('nm').value,email:$('em').value,password:$('pw').value}));boot()}catch(e){if(e.status===409&&signup){$('err').innerHTML='An account with this email already exists. <a href="#" onclick="flip();return false">Log in instead</a>';R.toast('That email is already registered.')}else $('err').textContent=e.message}}
+async function boot(){try{await api('/auth/me')}catch{$('auth').hidden=false;$('app').hidden=true;return}
+$('auth').hidden=true;$('app').hidden=false;const o=(await api('/orgs/mine')).orgs[0];$('noorg').hidden=!!o;$('main').hidden=!o;if(!o)return;
+if(o.role==='user')$('kd').querySelector('[value=found]').remove();org=o;$('who').textContent=o.name+' · '+o.role;$('zo').innerHTML=(o.zones||'other').split(',').map(z=>`<option>${esc(z.trim())}</option>`).join('');refresh()}
+async function report(){try{const f=$('im').files[0];if(!f)throw new Error('Please add a photo.');
+const r=await api('/items',form({kind:$('kd').value,private_detail:$('pd').value,storage_location:$('sl').value,title:$('ti').value,description:$('de').value||'-',category:$('ca').value,color:$('co').value||'unknown',location:$('lo').value||$('zo').value,campus_zone:$('zo').value,event_date:$('dt').value,org_id:org.id,image:f}));
+R.toast('Report submitted.',1);$('rmsg').textContent='';$('matches').innerHTML=r.matches.length?'<h3>Possible matches</h3>'+r.matches.map(m=>`<div class="card"><b>${esc(m.item.title)}</b> <span class="chip">Match score ${Math.round(m.score*100)}%</span><p class="mute">Why suggested: ${esc(m.explanation)}</p></div>`).join(''):'<p class="mute">No potential matches yet. We will notify you if one appears.</p>';refresh()}catch(e){$('rmsg').textContent=e.message}}
+async function claim(id){const a=prompt('Describe a detail only the owner would know (not visible in the photo).');if(!a)return;try{await api('/items/'+id+'/claims',form({answer:a}));R.toast('Claim submitted. Staff will verify it.',1);refresh()}catch(e){R.toast(e.message)}}
+async function refresh(){const f=(await api('/items?kind=found&org_id='+org.id)).items;
+$('found').innerHTML=f.map(i=>`<div class="card"><img class="thumb" src="${esc(i.image_url)}" alt=""><b>${esc(i.title)}</b><p class="mute">${esc(i.campus_zone)} · ${esc(i.event_date)}</p><span class="chip">${esc(i.lifecycle)}</span> <button class="o" onclick="claim('${i.id}')">This is mine</button></div>`).join('')||'<p class="mute">No found items yet.</p>';
+const c=(await api('/claims/mine')).claims;$('claims').innerHTML=c.map(x=>`<div class="card"><b>${esc(x.title)}</b> <span class="chip ${x.status}">${esc(x.status.replace('_',' '))}</span>${x.note?`<p class="mute">${esc(x.note)}</p>`:''}${x.storage_location?`<p><b>Pickup:</b> ${esc(x.storage_location)}</p>`:''}</div>`).join('')||'<p class="mute">No claims yet.</p>';
+const n=(await api('/notifications')).notifications;$('notes').innerHTML=n.map(x=>`<div class="card">${esc(x.message)}</div>`).join('')||'<p class="mute">No notifications.</p>'}
+async function join(){try{await api('/orgs/join',form({code:$('jc').value}));R.toast('Joined!',1);boot()}catch(e){R.toast(e.message)}}
+async function mkorg(){try{const r=await api('/orgs',form({name:$('on').value,zones:$('oz').value}));R.toast('Institution created. Join code: '+r.join_code,1);boot()}catch(e){R.toast(e.message)}}
+function filt(){const q=$('fs').value.toLowerCase();document.querySelectorAll('#found .card').forEach(c=>c.hidden=!c.textContent.toLowerCase().includes(q))}
+setInterval(()=>{if(typeof org!=='undefined'&&org)refresh().catch(()=>{})},15000);
+boot();
+</script></body></html>

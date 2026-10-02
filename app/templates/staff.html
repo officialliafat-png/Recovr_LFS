@@ -1,0 +1,28 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Recovr Staff Console</title>
+<link rel="stylesheet" href="/static/recovr.css"></head><body>
+<nav><div class="wrap"><a class="logo" href="/">RECOVR</a><div><span id="who" class="mute"></span> <a href="/">Home</a><a href="/portal">Portal</a><a href="/admin">Admin</a></div></div></nav><main><h2>Staff console</h2>
+<div id="login" class="card"><b>Staff login</b><br><input id="e" placeholder="email"><input id="p" type="password" placeholder="password"><button onclick="login()">Log in</button> <span id="err" class="muted"></span></div>
+<div id="app" hidden><div id="demo" class="muted"></div><div class="grid" id="kpis"></div>
+<h2>Claims awaiting verification</h2><div id="claims"></div>
+<h2>By category</h2><ul id="cat"></ul><h2>By campus zone</h2><ul id="zone"></ul>
+<h2>Recent activity</h2><ul id="act"></ul><h2>Notifications</h2><ul id="notes"></ul></div></main>
+<script src="/static/recovr.js"></script>
+<script>
+const api=(p,o)=>fetch('/api/v1'+p,Object.assign({credentials:'same-origin'},o)).then(async r=>{const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.detail||'Request failed');return j});
+const form=o=>{const f=new FormData();for(const k in o)f.append(k,o[k]);return {method:'POST',body:f}};
+let org;const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+async function login(){try{await api('/auth/login',form({email:e.value,password:p.value}));await load()}catch(x){err.textContent=x.message}}
+async function decide(id,d){const note=d==='approved'?'':prompt('Note for the student (optional)')||'';await api('/claims/'+id+'/decision',form({decision:d,note}));load()}
+async function load(){const o=(await api('/orgs/mine')).orgs.find(x=>x.role!=='user');if(!o){err.textContent='This account has no staff access.';return}
+org=o.id;login_.hidden=true;app.hidden=false;who.textContent=o.name+' ('+o.role+')';
+const d=await api('/orgs/'+org+'/dashboard');const k=[['Lost reports',d.lost_reports],['Found items',d.found_items],['Possible matches',d.possible_matches],['Pending claims',d.pending_claims],['Returned',d.returned_items],['Unclaimed',d.unclaimed_items],['Return rate',Math.round(d.return_rate*100)+'%'],['Avg recovery (days)',d.avg_recovery_days??'–']];
+kpis.innerHTML=k.map(([a,b])=>`<div class=card><div class=muted>${a}</div><div class=n>${esc(b)}</div></div>`).join('');
+cat.innerHTML=d.by_category.map(([a,b])=>`<li>${esc(a)}: ${b}</li>`).join('')||'<li class=muted>No items yet.</li>';
+zone.innerHTML=d.by_zone.map(([a,b])=>`<li>${esc(a)}: ${b}</li>`).join('')||'<li class=muted>No items yet.</li>';
+act.innerHTML=d.recent_activity.map(a=>`<li>${esc(a.action)} <span class=muted>${esc(a.detail)}</span></li>`).join('')||'<li class=muted>No activity.</li>';
+const c=(await api('/orgs/'+org+'/claims')).claims.filter(x=>x.status==='pending'||x.status==='needs_info');
+claims.innerHTML=c.map(x=>`<div class=card><b>${esc(x.title)}</b> — claimed by ${esc(x.claimant)}<br>Private detail on file: <i>${esc(x.private_detail)||'(none)'}</i><br>Claimant answered: <i>${esc(x.answer)}</i><br><button onclick="decide('${x.id}','approved')">Approve</button> <button class=o onclick="decide('${x.id}','needs_info')">Need more info</button> <button class=o onclick="decide('${x.id}','rejected')">Reject</button></div>`).join('')||'<p class=muted>No pending claims.</p>';
+notes.innerHTML=(await api('/notifications')).notifications.map(n=>`<li>${esc(n.message)}</li>`).join('')||'<li class=muted>No notifications.</li>'}
+const login_=document.getElementById('login');api('/auth/me').then(load).catch(()=>{});
+</script></body></html>

@@ -1,0 +1,27 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Recovr — Try it live</title><link rel="stylesheet" href="/static/recovr.css"></head><body>
+<nav><div class="wrap"><a class="logo" href="/">RECOVR</a><div><a href="/portal">Portal</a><a href="/staff">Staff</a><a href="/admin">Admin</a></div></div></nav>
+<main><h2>Test Recovr live</h2><p class="lead">Work through these tasks in order. Each one tells you what to do and what you should see. Ticks are saved in this browser.</p>
+<div class="card"><b id="pt">0 of 0 done</b><div class="bar"><i id="pb"></i></div><p><button class="o" onclick="reset()">Reset checklist</button></p></div><p></p><div id="list" class="grid" style="grid-template-columns:1fr"></div></main>
+<script src="/static/recovr.js"></script><script>
+const T=[
+['Read the landing page','Open the home page. You should see the problem, 4 steps, features and demo pricing.','/'],
+['Sign up with a NEW email','At the portal choose Switch to sign up. Use any new email and a password of 8+ characters. You should land inside the portal.','/portal'],
+['Try the same email again','Log out (clear cookies or use a private window), sign up with the SAME email. You should see “An account with this email already exists” and a Log in instead link.','/portal'],
+['Create an institution (you become admin)','In the portal choose Create an institution, give a name and zones like library,cafeteria. A join code appears.','/portal'],
+['Open the admin portal','Check the Overview, Members, Items, Claims, Audit log and Settings tabs. Copy the join code in Settings.','/admin'],
+['Sign up a second account as a student','Use a private window and a new email. Enter the join code under Join your institution.','/portal'],
+['Promote a staff member','In Admin → Members, add a third account (signed up first) as staff, or change a role from the dropdown.','/admin'],
+['Student: report a lost item','As the student, pick Lost item, add a photo and zone, submit. You should see a toast and, if something similar exists, a match with an explanation.','/portal'],
+['Staff: report a found item','As staff or admin pick Found item, add a similar photo, a private detail and a storage location.','/portal'],
+['Student: check notifications','Refresh the portal. You should see “You may have a match for your lost item”.','/portal'],
+['Student: submit a claim','Under Found items press This is mine and enter the private detail.','/portal'],
+['Staff: verify and approve','At the staff console review the private detail vs the answer, then Approve.','/staff'],
+['Student: see pickup details','Under My claims the status is approved and the pickup location is shown.','/portal'],
+['Admin: check analytics and audit log','Overview shows the return; Audit log lists the match, claim, approval and return.','/admin'],
+['Try an error','Open /nothing-here (friendly 404) and try joining with the code ZZZZZZ (clear error message).','/nothing-here']];
+let S={};try{S=JSON.parse(localStorage.getItem('rg')||'{}')}catch{}
+function save(){try{localStorage.setItem('rg',JSON.stringify(S))}catch{}}
+function draw(){const d=T.filter((_,i)=>S[i]).length;pt.textContent=d+' of '+T.length+' done';pb.style.width=(100*d/T.length)+'%';
+list.innerHTML=T.map((t,i)=>`<div class="card task ${S[i]?'done':''}"><input type="checkbox" ${S[i]?'checked':''} onchange="S[${i}]=this.checked;save();draw()"><div><b>${i+1}. ${R.esc(t[0])}</b><p class="mute">${R.esc(t[1])}</p><a class="btn o" href="${t[2]}" target="_blank" rel="noopener">Open</a></div></div>`).join('');if(d===T.length)R.toast('All tasks complete. Nice work!',1)}
+function reset(){S={};save();draw()}draw();
+</script></body></html>

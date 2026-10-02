@@ -1,0 +1,32 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Recovr — Admin portal</title><link rel="stylesheet" href="/static/recovr.css"></head><body>
+<nav><div class="wrap"><a class="logo" href="/">RECOVR</a><div><span id="who" class="mute"></span> <a href="/portal">Portal</a><a href="/staff">Staff</a><a href="/guide">Guide</a></div></div></nav>
+<main><h2>Admin portal</h2>
+<div id="gate" class="card" hidden><b>Admin access required.</b><p class="mute">Log in at the portal with an institution admin account (for example admin@demo.test), then come back.</p><a class="btn" href="/portal">Go to login</a></div>
+<div id="app" hidden><div class="tabs" id="tabs"></div><div id="view"></div></div></main>
+<script src="/static/recovr.js"></script><script>
+const $=id=>document.getElementById(id),E=R.esc,A=R.api,F=R.form;let org,tab='Overview';
+const TABS=['Overview','Members','Items','Claims','Audit log','Settings'];
+async function boot(){try{org=(await A('/orgs/mine',0,1)).orgs.find(x=>x.role==='admin');if(!org)throw 0}catch{$('gate').hidden=false;return}
+$('app').hidden=false;$('who').textContent=org.name;show(tab)}
+async function show(t){tab=t;$('tabs').innerHTML=TABS.map(x=>`<button class="${x===t?'on':''}" onclick="show('${x}')">${x}</button>`).join('');
+const v=$('view');try{v.innerHTML=await VIEWS[t]()}catch(e){v.innerHTML='<p class="mute">Could not load this section.</p>'}}
+const rows=(h,b)=>`<div style="overflow-x:auto"><table><tr>${h.map(x=>`<th>${x}</th>`).join('')}</tr>${b||`<tr><td colspan="${h.length}" class="mute">Nothing here yet.</td></tr>`}</table></div>`;
+const VIEWS={
+async Overview(){const d=await A('/orgs/'+org.id+'/dashboard');const k=[['Lost reports',d.lost_reports],['Found items',d.found_items],['Possible matches',d.possible_matches],['Pending claims',d.pending_claims],['Returned',d.returned_items],['Unclaimed',d.unclaimed_items],['Return rate',Math.round(d.return_rate*100)+'%'],['Avg recovery (days)',d.avg_recovery_days??'–']];
+return '<div class="grid">'+k.map(([a,b])=>`<div class="card"><div class="mute">${a}</div><div class="n">${E(b)}</div></div>`).join('')+'</div><h3 style="margin-top:20px">Top categories</h3>'+rows(['Category','Items'],d.by_category.map(([a,b])=>`<tr><td>${E(a)}</td><td>${b}</td></tr>`).join(''))+'<h3 style="margin-top:20px">High-loss zones</h3>'+rows(['Zone','Items'],d.by_zone.map(([a,b])=>`<tr><td>${E(a)}</td><td>${b}</td></tr>`).join(''))},
+async Members(){const m=(await A('/orgs/'+org.id+'/members')).members;
+return `<div class="card"><b>Add someone</b> <span class="mute">(they must have signed up first)</span><div class="grid"><input id="ne" placeholder="email"><select id="nr"><option>user</option><option>staff</option><option>admin</option></select><button onclick="addM()">Add</button></div></div><p></p>`+rows(['Name','Email','Role',''],m.map(x=>`<tr><td>${E(x.display_name)}</td><td>${E(x.email)}</td><td><select onchange="role('${x.id}',this.value)">${['user','staff','admin'].map(r=>`<option ${r===x.role?'selected':''}>${r}</option>`).join('')}</select></td><td><button class="o" onclick="rm('${x.id}')">Remove</button></td></tr>`).join(''))},
+async Items(){const i=(await A('/orgs/'+org.id+'/items')).items;
+return '<input placeholder="Filter by title, type, zone, status…" oninput="flt(this.value)">'+rows(['Item','Type','Zone','Status','Storage (private)',''],i.map(x=>`<tr><td>${E(x.title)}</td><td>${E(x.kind)}</td><td>${E(x.campus_zone)}</td><td><span class="chip">${E(x.lifecycle)}</span></td><td>${E(x.storage_location)}</td><td><button class="o" onclick="del('${x.id}')">Delete</button></td></tr>`).join(''))},
+async Claims(){const c=(await A('/orgs/'+org.id+'/claims')).claims;return rows(['Item','Claimant','Answer','Status'],c.map(x=>`<tr><td>${E(x.title)}</td><td>${E(x.claimant)}</td><td>${E(x.answer)}</td><td><span class="chip ${x.status}">${E(x.status.replace('_',' '))}</span></td></tr>`).join(''))},
+async 'Audit log'(){const e=(await A('/orgs/'+org.id+'/audit')).events;return rows(['When','Action','Detail'],e.map(x=>`<tr><td>${E(x.created_at.slice(0,16).replace('T',' '))}</td><td>${E(x.action)}</td><td>${E(x.detail)}</td></tr>`).join(''))},
+async Settings(){const o=(await A('/orgs/mine')).orgs.find(x=>x.id===org.id);return `<div class="grid"><div class="card"><h3>Join code</h3><div class="n">${E(o.join_code)}</div><p class="mute">Share this with students and staff so they can join from the portal.</p><button class="o" onclick="navigator.clipboard.writeText('${E(o.join_code)}');R.toast('Copied',1)">Copy</button></div><div class="card"><h3>Campus zones</h3><input id="zs" value="${E(o.zones)}"><button onclick="saveZ()">Save zones</button></div></div>`}};
+async function act(fn,msg){try{await fn();R.toast(msg,1);show(tab)}catch(e){}}
+const addM=()=>act(()=>A('/orgs/'+org.id+'/members',F({email:$('ne').value,role:$('nr').value})),'Member added');
+const role=(id,r)=>act(()=>A('/orgs/'+org.id+'/members/'+id+'/role',F({role:r})),'Role updated');
+const rm=id=>confirm('Remove this member?')&&act(()=>A('/orgs/'+org.id+'/members/'+id,{method:'DELETE'}),'Member removed');
+const del=id=>confirm('Delete this item and its claims? This cannot be undone.')&&act(()=>A('/orgs/'+org.id+'/items/'+id,{method:'DELETE'}),'Item deleted');
+const saveZ=()=>act(()=>A('/orgs/'+org.id+'/zones',F({zones:$('zs').value})),'Zones saved');
+function flt(q){q=q.toLowerCase();document.querySelectorAll('#view tr:not(:first-child)').forEach(r=>r.hidden=!r.textContent.toLowerCase().includes(q))}
+boot();
+</script></body></html>

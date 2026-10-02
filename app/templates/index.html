@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Recovr</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <section class="landing-page" data-view="landing">
+      <header class="site-nav">
+        <a class="wordmark" href="#home" aria-label="Recovr home">Recovr</a>
+        <nav aria-label="Landing navigation">
+          <a href="#how">How it works</a>
+          <a href="#recent">Recent items</a>
+          <a href="/docs">API docs</a>
+          <button
+            type="button"
+            class="ghost-button"
+            data-action="show-login"
+            data-session-label="nav"
+            data-guest-label="Log in"
+          >Log in</button>
+        </nav>
+      </header>
+
+      <main>
+        <section class="landing-hero" id="home">
+          <div class="hero-copy">
+            <p class="eyebrow">Campus lost & found</p>
+            <h1>Find what's lost.</h1>
+            <p>
+              A community-driven lost-and-found logbook that compares uploaded photos
+              against open reports using computer vision.
+            </p>
+            <form class="hero-search" data-action="hero-search">
+              <input name="q" placeholder="Search items, colors, buildings..." />
+              <button type="submit">Browse lost items</button>
+            </form>
+          </div>
+          <aside class="polaroid-stack" aria-label="Sample listing sketch">
+            <div class="photo-card main-photo">
+              <div class="sketch-scene">
+                <span class="sketch-sun"></span>
+                <span class="sketch-line a"></span>
+                <span class="sketch-line b"></span>
+                <span class="sketch-object"></span>
+              </div>
+              <p>#14. the one with the sticker.</p>
+            </div>
+            <div class="photo-card back-photo"></div>
+          </aside>
+        </section>
+
+        <section class="how-section" id="how">
+          <div class="rule-heading">
+            <span></span>
+            <h2>How it works</h2>
+            <span></span>
+          </div>
+          <div class="how-grid">
+            <article>
+              <strong>1</strong>
+              <h3>Log it</h3>
+              <p>Sketch or describe what you lost or found, then add a clear item photo.</p>
+            </article>
+            <article>
+              <strong>2</strong>
+              <h3>Match</h3>
+              <p>Recovr compares shape, local image features, color, category, place, and date.</p>
+            </article>
+            <article>
+              <strong>3</strong>
+              <h3>Recover</h3>
+              <p>Likely matches are surfaced while contact details stay hidden in public views.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="recent-section" id="recent">
+          <div class="recent-heading">
+            <div>
+              <p class="eyebrow">Recently posted</p>
+              <h2>See what the board is already holding.</h2>
+            </div>
+            <button
+              type="button"
+              data-action="show-login"
+              data-session-label="cta"
+              data-guest-label="Create account"
+            >Create account</button>
+          </div>
+          <p class="recent-copy">
+            New visitors can scan open reports before signing in. Creating an account lets them
+            post their own item, run visual matching, and respond through the recovery flow.
+          </p>
+          <p class="form-note" id="landing-status" role="status"></p>
+          <div class="landing-items" id="landing-items"></div>
+        </section>
+      </main>
+    </section>
+
+    <section class="auth-page hidden" data-view="auth" aria-labelledby="login-title">
+      <a class="wordmark corner-mark" href="#home" data-action="show-landing">Recovr</a>
+      <form class="login-card" id="login-form">
+        <p class="eyebrow" id="auth-eyebrow">Secure access</p>
+        <h1 id="login-title">Open your Recovr log.</h1>
+        <p id="auth-copy">
+          Log in with your Recovr account. New accounts are stored with salted password
+          hashes and private contact details.
+        </p>
+        <div class="auth-tabs" aria-label="Authentication mode">
+          <button type="button" class="active" data-auth-mode="login">Log in</button>
+          <button type="button" data-auth-mode="signup">Create account</button>
+        </div>
+        <label class="signup-only hidden">
+          Display name
+          <input name="display_name" placeholder="Zashaan" autocomplete="name" />
+        </label>
+        <label>
+          Email
+          <input name="email" type="email" placeholder="you@example.com" autocomplete="email" required />
+        </label>
+        <label>
+          Password
+          <input name="password" type="password" placeholder="At least 8 characters" autocomplete="current-password" required />
+        </label>
+        <p class="form-note" id="auth-status" role="status"></p>
+        <button type="submit" id="auth-submit">Log in</button>
+        <button type="button" class="text-button" data-action="show-landing">Back to landing</button>
+      </form>
+    </section>
+
+    <div class="app-shell hidden" data-view="app">
+      <aside class="ledger">
+        <a class="brand" href="#app" aria-label="Recovr app">
+          <span class="brand-mark">R</span>
+          <span>
+            <strong>Recovr Log</strong>
+            <small>Finding things, one match at a time.</small>
+          </span>
+        </a>
+        <nav aria-label="App navigation">
+          <a class="nav-link active" href="#browse" data-app-page-link="board">Browse</a>
+          <a class="nav-link" href="#report" data-app-page-link="board">Post item</a>
+          <a class="nav-link" href="#mine" data-app-page-link="mine">My posts</a>
+          <a class="nav-link" href="/docs">API docs</a>
+        </nav>
+        <div class="ledger-note">
+          <span id="session-name">Signed in</span>
+          <p>Search open reports or add a listing with a photo for visual matching.</p>
+          <button type="button" class="text-button align-start" data-action="logout">Log out</button>
+        </div>
+      </aside>
+
+      <main class="page">
+        <section class="app-header">
+          <div>
+            <p class="eyebrow">Active recovery board</p>
+            <h1>Matches, reports, and clues.</h1>
+          </div>
+          <button type="button" data-action="show-landing">View landing</button>
+        </section>
+
+        <section class="workspace" data-app-page="board">
+          <section class="panel submit-panel" id="report">
+            <div class="section-heading">
+              <p class="label">New report</p>
+              <h2>Post a listing</h2>
+            </div>
+            <form id="item-form">
+              <div class="segmented">
+                <label><input type="radio" name="kind" value="lost" checked /> Lost item</label>
+                <label><input type="radio" name="kind" value="found" /> Found item</label>
+              </div>
+              <label>
+                Title
+                <input name="title" placeholder="Black Hydro Flask" required />
+              </label>
+              <div class="two-column">
+                <label>
+                  Category
+                  <select name="category" required>
+                    <option value="electronics">Electronics</option>
+                    <option value="clothing">Clothing</option>
+                    <option value="id_cards">ID/cards</option>
+                    <option value="keys">Keys</option>
+                    <option value="bags">Bags</option>
+                    <option value="jewelry">Jewelry</option>
+                    <option value="other">Other</option>
+                  </select>
+                </label>
+                <label>
+                  Main color
+                  <input name="color" placeholder="black" required />
+                </label>
+              </div>
+              <label>
+                Location
+                <input name="location" placeholder="Library second floor" required />
+              </label>
+              <div class="two-column">
+                <label>
+                  Campus zone
+                  <input name="campus_zone" placeholder="engineering quad" value="other" required />
+                </label>
+                <label>
+                  Date lost/found
+                  <input name="event_date" type="date" required />
+                </label>
+              </div>
+              <label>
+                Details
+                <textarea name="description" placeholder="Stickers, scratches, brand, or other details" required></textarea>
+              </label>
+              <p class="form-note">Your account name and email are attached privately and hidden from public listings.</p>
+              <label>
+                Photo
+                <input name="image" type="file" accept="image/*" required />
+              </label>
+              <button type="submit">Submit + match</button>
+            </form>
+          </section>
+
+          <section class="panel results-panel" id="browse">
+            <div class="section-heading">
+              <p class="label">Active listings</p>
+              <h2>Browse reports</h2>
+            </div>
+            <form id="search-form" class="search-form">
+              <input name="q" placeholder="Search title or description" />
+              <input name="campus_zone" placeholder="Campus zone" />
+              <button type="submit">Search</button>
+            </form>
+            <div class="toolbar" aria-label="Listing type filters">
+              <button class="filter active" data-kind="">All</button>
+              <button class="filter" data-kind="lost">Lost</button>
+              <button class="filter" data-kind="found">Found</button>
+            </div>
+            <div id="status"></div>
+            <div id="items" class="items"></div>
+          </section>
+        </section>
+
+        <section class="manage-page hidden" data-app-page="mine" id="mine">
+          <section class="panel manage-panel">
+            <div class="section-heading">
+              <p class="label">Your listings</p>
+              <h2>Manage posts</h2>
+            </div>
+            <div class="manage-intro">
+              <p class="small">
+                Review everything you have posted, including resolved items. Edit details,
+                update status, or remove posts that no longer belong on the board.
+              </p>
+              <button type="button" data-action="refresh-mine">Refresh</button>
+            </div>
+            <div id="my-status"></div>
+            <div id="my-items" class="manage-list"></div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>
